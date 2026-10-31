@@ -10,7 +10,7 @@ import java.nio.file.Paths;
 
 import modelo.Solicitud;
 
-public class BuscadorTexto {
+public class BuscadorTexto implements OperacionStrategy{
 
     public String ejecutar(Solicitud solicitud) {
         if (solicitud == null) {

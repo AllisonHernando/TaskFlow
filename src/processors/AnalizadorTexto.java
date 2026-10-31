@@ -9,7 +9,7 @@ import java.nio.file.Paths;
 import java.util.Locale;
 import modelo.Solicitud;
 
-public class AnalizadorTexto {
+public class AnalizadorTexto implements OperacionStrategy{
 
     public String ejecutar(Solicitud solicitud) {
         if (solicitud == null || solicitud.getRuta() == null || solicitud.getRuta().trim().isEmpty()) {
