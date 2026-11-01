@@ -7,6 +7,7 @@ import java.util.function.Supplier;
 
 import processors.AnalizadorTexto;
 import processors.BuscadorTexto;
+import processors.ComparadorArchivos;
 import processors.OperacionStrategy;
 
 public class ProcessorFactory {
@@ -18,6 +19,9 @@ public class ProcessorFactory {
         registrar("ANALIZAR_TEXTO", AnalizadorTexto::new);
 
         registrar("BUSCAR_TEXTO", BuscadorTexto::new);
+        
+        registrar("COMPARAR_ARCHIVOS", ComparadorArchivos::new);
+
     }
 
     public void registrar(String nombre, Supplier<? extends OperacionStrategy> proveedor) {
