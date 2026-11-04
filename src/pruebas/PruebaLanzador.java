@@ -9,6 +9,7 @@ import java.util.concurrent.Future;
 import processors.LanzadorProcesoHijo;
 import processors.LanzadorProcesoHijo.ResultadoHijo;
 
+public class PruebaLanzador {
 
     public static void main(String[] args) throws Exception {
         LanzadorProcesoHijo lanzador = new LanzadorProcesoHijo();
