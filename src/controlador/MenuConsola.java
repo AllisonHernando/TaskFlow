@@ -17,6 +17,7 @@ public class MenuConsola {
 		System.out.println("2. Añadir solicitud");
 		System.out.println("3. Ver estado de un trabajo");
 		System.out.println("4. Ver estadísticas");
+		System.out.println("5. Cancelar un trabajo");
 		System.out.println("6. Cerrar");
 		System.out.print("Elige una opción: ");
 	}
@@ -47,6 +48,15 @@ public class MenuConsola {
 			break;
 		case "4":
 			System.out.println(sistema.verEstadisticas());
+			break;
+		case "5":
+			System.out.print("Id del trabajo a cancelar: ");
+			String idCancelar = teclado.nextLine();
+			if (sistema.cancelar(idCancelar)) {
+				System.out.println("Trabajo " + idCancelar + " cancelado");
+			} else {
+				System.out.println("No se ha podido cancelar " + idCancelar + " (no existe o ya ha empezado)");
+			}
 			break;
 		case "6":
 			System.out.println("Cerrando TaskFlow...");
