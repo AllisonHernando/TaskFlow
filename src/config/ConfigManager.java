@@ -15,18 +15,20 @@ public class ConfigManager {
             propiedades.load(archivo);
 
         } catch (IOException e) {
-            System.err.println("No ha podido cargarse el archivo app.propierties " + e.getMessage());
+            System.err.println("No ha podido cargarse el archivo app.properties " + e.getMessage());
         }
     }
 
-    public static String obtener(String clave, String valorPorDefecto) {String valor = propiedades.getProperty(clave);
-        if (valor==null || valor.trim().isEmpty()) {
+    public static String obtener(String clave, String valorPorDefecto) {
+        String valor = propiedades.getProperty(clave);
+        if (valor == null || valor.trim().isEmpty()) {
             return valorPorDefecto;
         }
         return valor.trim();
     }
 
-    public static int obtenerEnteroPositivo(String clave, int valorPorDefecto) {String valor = obtener(clave, String.valueOf(valorPorDefecto));
+    public static int obtenerEnteroPositivo(String clave, int valorPorDefecto) {
+        String valor = obtener(clave, String.valueOf(valorPorDefecto));
         try {
             int numero = Integer.parseInt(valor);
 

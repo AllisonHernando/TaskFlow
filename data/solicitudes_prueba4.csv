@@ -1,0 +1,6 @@
+id;operacion;ruta;parametros
+PR4-01;ANALIZAR_TEXTO;data/hola.txt;
+PR4-02;ANALIZAR_TEXTO;data/no_existe_04.txt;
+PR4-03;BUSCAR_TEXTO;data/hola.txt;hola
+PR4-04;BUSCAR_TEXTO;data/hola.txt;
+PR4-05;COMPARAR_ARCHIVOS;data/hola.txt|data/hola.txt;
