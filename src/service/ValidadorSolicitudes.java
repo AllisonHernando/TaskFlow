@@ -10,7 +10,7 @@ import modelo.Solicitud;
 public class ValidadorSolicitudes {
 
 	private static final Set<String> operaciones_admitidas = Set.of("ANALIZAR_TEXTO", "BUSCAR_TEXTO",
-			"ESTADISTICAS_CSV");
+			"ESTADISTICAS_CSV", "CALCULAR_HASH", "COMPARAR_ARCHIVOS");
 
 	public String validar(Solicitud solicitud, Set<String> idsYaRegistrados) {
 		if (solicitud == null) {
