@@ -9,6 +9,8 @@ import processors.AnalizadorTexto;
 import processors.BuscadorTexto;
 import processors.ComparadorArchivos;
 import processors.OperacionStrategy;
+import processors.EstadisticasCsvProcessor;
+import processors.CalculadorHashProcessor;
 
 public class ProcessorFactory {
 
@@ -22,6 +24,9 @@ public class ProcessorFactory {
         
         registrar("COMPARAR_ARCHIVOS", ComparadorArchivos::new);
 
+        registrar("ESTADISTICAS_CSV", EstadisticasCsvProcessor::new);
+        
+        registrar("CALCULAR_HASH", CalculadorHashProcessor::new);
     }
 
     public void registrar(String nombre, Supplier<? extends OperacionStrategy> proveedor) {
