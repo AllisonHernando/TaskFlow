@@ -3,16 +3,15 @@ package core;
 import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import factory.ProcessorFactory;
+import modelo.EstadoTrabajo;
 import modelo.Trabajo;
 
 public class MotorTrabajos {
@@ -20,48 +19,47 @@ public class MotorTrabajos {
     private final ExecutorService poolTrabajadores;
     private final GestorEstados gestorEstados;
     private final ProcessorFactory factory = new ProcessorFactory();
-
     private final Trabajo FIN = new Trabajo("FIN");
-
-    private final Semaphore permisos;
-
-    private final AtomicInteger enCola = new AtomicInteger(0);
     private final AtomicInteger trabajadoresActivos = new AtomicInteger(0);
     private final Queue<Future<Boolean>> futuros = new ConcurrentLinkedQueue<>();
     private final Object candado = new Object();
-    private final Thread despachador;
     private volatile boolean activo;
+    private final int numeroTrabajadores;
 
     public MotorTrabajos(int capacidadCola, int numHilosPool) {
         this(capacidadCola, numHilosPool, new GestorEstados());
     }
 
     public MotorTrabajos(int capacidadCola, int numHilosPool, GestorEstados gestorEstados) {
+        if (capacidadCola <= 0 || numHilosPool < 4) {
+            throw new IllegalArgumentException("La cola debe tener capacidad positiva y debe haber al menos cuatro trabajadores");
+        }
         this.colaTrabajos = new ArrayBlockingQueue<>(capacidadCola);
         this.poolTrabajadores = Executors.newFixedThreadPool(numHilosPool);
         this.gestorEstados = gestorEstados;
-        this.permisos = new Semaphore(numHilosPool);
+        this.numeroTrabajadores = numHilosPool;
         this.activo = true;
-        this.despachador = new Thread(() -> despachar());
-        this.despachador.start();
+
+        for (int i = 0; i < numeroTrabajadores; i++) {
+            Future<Boolean> futuro = poolTrabajadores.submit(
+                new HiloTrabajador(colaTrabajos, FIN, gestorEstados, factory, trabajadoresActivos));
+            futuros.add(futuro);
+        }
     }
 
-
     public boolean agregarTrabajo(Trabajo trabajo) throws InterruptedException {
+        if (trabajo == null) return false;
         synchronized (candado) {
-            if (!activo) {
-                return false;
+            if (!activo) return false;
+            synchronized (trabajo) {
+                gestorEstados.registrar(trabajo);
+                if (!colaTrabajos.offer(trabajo)) {
+                    gestorEstados.descartar(trabajo);
+                    return false;
+                }
+                gestorEstados.cambiarEstado(trabajo, EstadoTrabajo.EN_COLA);
+                return true;
             }
-            gestorEstados.registrar(trabajo);
-            enCola.incrementAndGet();
-            try {
-                colaTrabajos.put(trabajo);
-            } catch (InterruptedException e) {
-                enCola.decrementAndGet();
-                gestorEstados.descartar(trabajo);
-                throw e;
-            }
-            return true;
         }
     }
 
@@ -69,64 +67,23 @@ public class MotorTrabajos {
         return colaTrabajos.take();
     }
 
-    private void despachar() {
-        try {
-            while (true) {
-                permisos.acquire();                
-                final Trabajo t = colaTrabajos.take(); 
-                if (t == FIN) {
-                    permisos.release();
-                    break;                          
-                }
-                enCola.decrementAndGet();
-                Callable<Boolean> tarea = () -> {
-                    trabajadoresActivos.incrementAndGet();
-                    try {
-                        return new HiloTrabajador(t, gestorEstados, factory).call();
-                    } finally {
-                        trabajadoresActivos.decrementAndGet();
-                        permisos.release();
-                    }
-                };
-                Future<Boolean> f = poolTrabajadores.submit(tarea);
-                futuros.add(f);
-            }
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
-    }
-
     public boolean cerrar(long timeoutSegundos) throws InterruptedException {
         synchronized (candado) {
             if (!activo) {
-                return true; 
+                return poolTrabajadores.isTerminated();
             }
             activo = false;
         }
 
-        colaTrabajos.put(FIN);   
-
-        despachador.join(timeoutSegundos * 1000);
-        boolean limpio = !despachador.isAlive();
-        if (!limpio) {
-            despachador.interrupt();
-            despachador.join();
+        for (int i = 0; i < numeroTrabajadores; i++) {
+            colaTrabajos.put(FIN);
         }
 
         poolTrabajadores.shutdown();
-        limpio = poolTrabajadores.awaitTermination(timeoutSegundos, TimeUnit.SECONDS) && limpio;
-
+        boolean limpio = poolTrabajadores.awaitTermination(timeoutSegundos, TimeUnit.SECONDS);
         if (!limpio) {
-            Trabajo t = colaTrabajos.poll();
-            while (t != null) {
-                if (t != FIN) {
-                    enCola.decrementAndGet();
-                    gestorEstados.cancelarTrabajo(t);
-                }
-                t = colaTrabajos.poll();
-            }
             poolTrabajadores.shutdownNow();
-            poolTrabajadores.awaitTermination(2, TimeUnit.SECONDS);
+            limpio = poolTrabajadores.awaitTermination(2, TimeUnit.SECONDS);
         }
         return limpio;
     }
@@ -139,9 +96,9 @@ public class MotorTrabajos {
         }
     }
 
-    public int getTrabajosEnEspera()        { return enCola.get(); }
-    public int getTrabajadoresActivos()     { return trabajadoresActivos.get(); }
-    public boolean estaActivo()             { return activo; }
+    public int getTrabajosEnEspera() { return colaTrabajos.size(); }
+    public int getTrabajadoresActivos() { return trabajadoresActivos.get(); }
+    public boolean estaActivo() { return activo; }
     public GestorEstados getGestorEstados() { return gestorEstados; }
     public Queue<Future<Boolean>> getFuturos() { return futuros; }
 }

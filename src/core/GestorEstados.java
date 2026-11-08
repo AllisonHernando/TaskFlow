@@ -5,13 +5,13 @@ import modelo.Trabajo;
 
 public class GestorEstados {
 
-    private int aceptados = 0;
-    private int pendientes = 0;
-    private int enCola = 0;
-    private int ejecutando = 0;
-    private int completados = 0;
-    private int fallidos = 0;
-    private int cancelados = 0;
+    private int aceptados;
+    private int pendientes;
+    private int enCola;
+    private int ejecutando;
+    private int completados;
+    private int fallidos;
+    private int cancelados;
 
     private boolean transicionValida(EstadoTrabajo actual, EstadoTrabajo nuevo) {
         if (actual == EstadoTrabajo.PENDIENTE) {
@@ -21,46 +21,42 @@ public class GestorEstados {
             return nuevo == EstadoTrabajo.EJECUTANDO || nuevo == EstadoTrabajo.CANCELADO;
         }
         if (actual == EstadoTrabajo.EJECUTANDO) {
-            return nuevo == EstadoTrabajo.COMPLETADO
-                || nuevo == EstadoTrabajo.FALLIDO
-                || nuevo == EstadoTrabajo.CANCELADO;
+            return nuevo == EstadoTrabajo.COMPLETADO || nuevo == EstadoTrabajo.FALLIDO;
         }
-        return false; 
+        return false;
     }
 
     private void sumar(EstadoTrabajo estado, int cantidad) {
-        if (estado == EstadoTrabajo.PENDIENTE) {
-            pendientes += cantidad;
-        } else if (estado == EstadoTrabajo.EN_COLA) {
-            enCola += cantidad;
-        } else if (estado == EstadoTrabajo.EJECUTANDO) {
-            ejecutando += cantidad;
-        } else if (estado == EstadoTrabajo.COMPLETADO) {
-            completados += cantidad;
-        } else if (estado == EstadoTrabajo.FALLIDO) {
-            fallidos += cantidad;
-        } else if (estado == EstadoTrabajo.CANCELADO) {
-            cancelados += cantidad;
+        switch (estado) {
+            case PENDIENTE: pendientes += cantidad; break;
+            case EN_COLA: enCola += cantidad; break;
+            case EJECUTANDO: ejecutando += cantidad; break;
+            case COMPLETADO: completados += cantidad; break;
+            case FALLIDO: fallidos += cantidad; break;
+            case CANCELADO: cancelados += cantidad; break;
+            default: break;
         }
     }
 
     public synchronized void registrar(Trabajo trabajo) {
+        if (trabajo == null || trabajo.getEstado() != EstadoTrabajo.PENDIENTE) {
+            throw new IllegalArgumentException("El trabajo no está en estado PENDIENTE");
+        }
         aceptados++;
-        trabajo.setEstado(EstadoTrabajo.EN_COLA);
-        enCola++;
+        pendientes++;
     }
 
     public synchronized void descartar(Trabajo trabajo) {
-        aceptados--;
-        enCola--;
-        trabajo.setEstado(EstadoTrabajo.PENDIENTE);
+        if (trabajo != null && trabajo.getEstado() == EstadoTrabajo.PENDIENTE) {
+            aceptados--;
+            pendientes--;
+        }
     }
 
     public synchronized boolean cambiarEstado(Trabajo trabajo, EstadoTrabajo nuevoEstado) {
+        if (trabajo == null || nuevoEstado == null) return false;
         EstadoTrabajo actual = trabajo.getEstado();
-        if (!transicionValida(actual, nuevoEstado)) {
-            return false;
-        }
+        if (!transicionValida(actual, nuevoEstado)) return false;
         trabajo.setEstado(nuevoEstado);
         sumar(actual, -1);
         sumar(nuevoEstado, 1);
@@ -68,26 +64,23 @@ public class GestorEstados {
     }
 
     public synchronized boolean cancelarTrabajo(Trabajo trabajo) {
+        if (trabajo == null) return false;
         EstadoTrabajo actual = trabajo.getEstado();
-        if (actual == EstadoTrabajo.EN_COLA || actual == EstadoTrabajo.PENDIENTE) {
-            trabajo.setEstado(EstadoTrabajo.CANCELADO);
-            sumar(actual, -1);
-            sumar(EstadoTrabajo.CANCELADO, 1);
-            return true;
-        }
-        return false;
+        if (actual != EstadoTrabajo.PENDIENTE && actual != EstadoTrabajo.EN_COLA) return false;
+        trabajo.setEstado(EstadoTrabajo.CANCELADO);
+        sumar(actual, -1);
+        sumar(EstadoTrabajo.CANCELADO, 1);
+        return true;
     }
 
-
-    public synchronized int getAceptados()   { return aceptados; }
-    public synchronized int getEnCola()      { return enCola; }
-    public synchronized int getEjecutando()  { return ejecutando; }
+    public synchronized int getAceptados() { return aceptados; }
+    public synchronized int getPendientes() { return pendientes; }
+    public synchronized int getEnCola() { return enCola; }
+    public synchronized int getEjecutando() { return ejecutando; }
+    public synchronized int getEnProceso() { return ejecutando; }
     public synchronized int getCompletados() { return completados; }
-    public synchronized int getFallidos()    { return fallidos; }
-    public synchronized int getCancelados()  { return cancelados; }
-
-    public synchronized int getPendientes()  { return enCola; }
-    public synchronized int getEnProceso()   { return ejecutando; }
+    public synchronized int getFallidos() { return fallidos; }
+    public synchronized int getCancelados() { return cancelados; }
 
     public synchronized boolean balanceCuadra() {
         return aceptados == completados + fallidos + cancelados;
@@ -95,6 +88,7 @@ public class GestorEstados {
 
     public synchronized String resumen() {
         return "aceptados=" + aceptados
+            + " pendientes=" + pendientes
             + " enCola=" + enCola
             + " ejecutando=" + ejecutando
             + " completados=" + completados
