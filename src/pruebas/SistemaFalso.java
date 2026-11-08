@@ -34,7 +34,7 @@ public class SistemaFalso implements AccionesSistema, Runnable {
 						System.out.println("[trabajador] " + id + " no se ejecuta, está " + trabajos.get(id));
 						continue;
 					}
-					trabajos.put(id, EstadoTrabajo.EN_PROCESO);
+					trabajos.put(id, EstadoTrabajo.EN_COLA);
 				}
 				System.out.println("[trabajador] procesando " + id + "...");
 
@@ -84,7 +84,7 @@ public class SistemaFalso implements AccionesSistema, Runnable {
 		for (EstadoTrabajo estado : trabajos.values()) {
 			if (estado == EstadoTrabajo.PENDIENTE)
 				pendientes++;
-			if (estado == EstadoTrabajo.EN_PROCESO)
+			if (estado == EstadoTrabajo.EN_COLA)
 				enProceso++;
 			if (estado == EstadoTrabajo.COMPLETADO)
 				completados++;

@@ -2,7 +2,8 @@ package modelo;
 
 public enum EstadoTrabajo {
     PENDIENTE,
-    EN_PROCESO,
+    EN_COLA,
+    EJECUTANDO,
     COMPLETADO,
     FALLIDO,
     CANCELADO
