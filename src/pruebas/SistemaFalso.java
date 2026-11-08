@@ -6,6 +6,7 @@ import controlador.AccionesSistema;
 import modelo.EstadoTrabajo;
 
 public class SistemaFalso implements AccionesSistema, Runnable {
+	//Buscar estado de un trabajo por su id por eso usé hashMap
 	private HashMap<String, EstadoTrabajo> trabajos = new HashMap<>();
 	private boolean cerrado = false;
 
@@ -21,12 +22,14 @@ public class SistemaFalso implements AccionesSistema, Runnable {
 		String[] orden = { "T1", "T2", "T3", "T4" };
 		try {
 			for (String id : orden) {
+				//Le digo que espere para que de tiempo a interactuar con el menú
 				Thread.sleep(4000);
 
 				synchronized (this) {
 					if (cerrado) {
 						return;
 					}
+					// si lo han cancelado lo salta
 					if (trabajos.get(id) != EstadoTrabajo.PENDIENTE) {
 						System.out.println("[trabajador] " + id + " no se ejecuta, está " + trabajos.get(id));
 						continue;
@@ -74,7 +77,7 @@ public class SistemaFalso implements AccionesSistema, Runnable {
 		}
 		return id + ": " + estado;
 	}
-
+	// cuenta cuantos trabajos hay en cada estado
 	@Override
 	public synchronized String verEstadisticas() {
 		int pendientes = 0, enProceso = 0, completados = 0, cancelados = 0;
@@ -91,7 +94,7 @@ public class SistemaFalso implements AccionesSistema, Runnable {
 		return "Pendientes: " + pendientes + " | En proceso: " + enProceso + " | Completados: " + completados
 				+ " | Cancelados: " + cancelados;
 	}
-
+	// solo se cancela si todavia no ha empezado
 	@Override
 	public synchronized boolean cancelar(String id) {
 		if (trabajos.get(id) == EstadoTrabajo.PENDIENTE) {
