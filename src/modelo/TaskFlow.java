@@ -2,7 +2,9 @@ package modelo;
 
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -11,6 +13,7 @@ import controlador.AccionesSistema;
 import core.GestorEstados;
 import core.MotorTrabajos;
 import exception.PersistenciaException;
+import persistencia.CsvResultadoRepository;
 import persistencia.SolicitudMapper;
 import service.CierreService;
 import service.InputService;
@@ -110,10 +113,28 @@ public class TaskFlow implements AccionesSistema {
 	@Override
 	public void cerrar() {
 		try {
+			// Espera a que termine el motor para recoger los estados finales
 			cierreService.cerrar();
+
+			List<ResultadoTrabajo> resultados = new ArrayList<>();
+
+			for (Trabajo trabajo : trabajos.values()) {
+				String estado = trabajo.getEstado().name();
+				boolean exito = trabajo.getEstado() == EstadoTrabajo.COMPLETADO;
+
+				resultados.add(new ResultadoTrabajo(trabajo.getId(), exito, "Estado final: " + estado, 0));
+			}
+
+			Path archivo = Path.of("resultados", "resultados.csv");
+			new CsvResultadoRepository().guardar(archivo, resultados);
+
+			System.out.println("Resultados guardados en: " + archivo);
+
 		} catch (InterruptedException e) {
 			Thread.currentThread().interrupt();
-			System.err.println("El cierre fue interrumpido.");
+			System.err.println("El cierre fue interrumpido; no se guardaron los resultados.");
+		} catch (PersistenciaException e) {
+			System.err.println("No se pudieron guardar los resultados: " + e.getMessage());
 		} catch (IllegalStateException e) {
 			System.err.println("No se pudo completar el cierre: " + e.getMessage());
 		}
