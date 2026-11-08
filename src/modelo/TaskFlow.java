@@ -110,26 +110,57 @@ public class TaskFlow implements AccionesSistema {
 		return motor.getGestorEstados().cancelarTrabajo(trabajo);
 	}
 
+	private boolean cerrado = false;
+
 	@Override
-	public void cerrar() {
+	public synchronized void cerrar() {
+		if (cerrado) {
+			return; // ya se cerro (por la opcion 6 del menu)
+		}
+		cerrado = true;
 		try {
 			// Espera a que termine el motor para recoger los estados finales
 			cierreService.cerrar();
 
 			List<ResultadoTrabajo> resultados = new ArrayList<>();
-
 			for (Trabajo trabajo : trabajos.values()) {
-				String estado = trabajo.getEstado().name();
-				boolean exito = trabajo.getEstado() == EstadoTrabajo.COMPLETADO;
+				EstadoTrabajo estado = trabajo.getEstado();
+				ResultadoTrabajo resultadoTrabajo = trabajo.getResultado();
 
-				resultados.add(new ResultadoTrabajo(trabajo.getId(), exito, "Estado final: " + estado, 0));
+				String detalle;
+				long duracion;
+
+				if (resultadoTrabajo == null) {
+					detalle = "Sin resultado (cancelado antes de iniciar)";
+					duracion = 0;
+				} else {
+					detalle = resultadoTrabajo.getMensajeResumen().replace("\r", "").replace("\n", " | ");
+					duracion = resultadoTrabajo.getTiempoEjecucionMs();
+				}
+
+				String operacion = trabajo.getSolicitud() == null ? "" : trabajo.getSolicitud().getOperacion();
+
+				boolean exito = estado == EstadoTrabajo.COMPLETADO;
+				String mensaje = operacion + " | " + estado + " | " + detalle;
+
+				resultados.add(new ResultadoTrabajo(trabajo.getId(), exito, mensaje, duracion));
 			}
 
 			Path archivo = Path.of("resultados", "resultados.csv");
 			new CsvResultadoRepository().guardar(archivo, resultados);
-
 			System.out.println("Resultados guardados en: " + archivo);
 
+			// Resumen de incidencias: los trabajos que no terminaron bien (FALLIDO o
+			// CANCELADO)
+			List<ResultadoTrabajo> incidencias = new ArrayList<>();
+			for (ResultadoTrabajo resultado : resultados) {
+				if (!resultado.isExito()) {
+					incidencias.add(resultado);
+				}
+			}
+			Path archivoIncidencias = Path.of("resultados", "incidencias.csv");
+			new CsvResultadoRepository().guardar(archivoIncidencias, incidencias);
+			System.out.println("Incidencias guardadas en: " + archivoIncidencias + " (" + incidencias.size() + ")");
 		} catch (InterruptedException e) {
 			Thread.currentThread().interrupt();
 			System.err.println("El cierre fue interrumpido; no se guardaron los resultados.");
@@ -141,7 +172,7 @@ public class TaskFlow implements AccionesSistema {
 	}
 
 	private void encolarSolicitud(Solicitud solicitud) {
-		Trabajo trabajo = new Trabajo(solicitud.getId());
+		Trabajo trabajo = new Trabajo(solicitud);
 
 		try {
 			boolean agregado = motor.agregarTrabajo(trabajo);

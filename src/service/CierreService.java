@@ -37,7 +37,7 @@ public class CierreService {
 
 		GestorEstados gestor = motor.getGestorEstados();
 
-		if (gestor.getPendientes() != 0 || gestor.getEnProceso() != 0) {
+		if (gestor.getPendientes() != 0 || gestor.getEnCola() != 0 || gestor.getEjecutando() != 0) {
 			throw new IllegalStateException("Quedan trabajos sin terminar: " + gestor.resumen());
 		}
 

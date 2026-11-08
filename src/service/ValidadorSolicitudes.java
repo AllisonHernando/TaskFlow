@@ -37,15 +37,22 @@ public class ValidadorSolicitudes {
 			return "Falta la ruta del recurso";
 		}
 
-		Path archivo;
-		try {
-			archivo = Path.of(ruta);
-		} catch (RuntimeException e) {
-			return "La ruta no es válida: " + ruta;
-		}
-
-		if (!Files.isRegularFile(archivo) || !Files.isReadable(archivo)) {
-			return "El recurso no existe o no se puede leer: " + ruta;
+		// BUSCAR_TEXTO y COMPARAR_ARCHIVOS pueden llevar varios archivos separados por
+		// |
+		for (String parte : ruta.split("\\|", -1)) {
+			String rutaArchivo = parte.trim();
+			if (rutaArchivo.isEmpty()) {
+				return "La ruta no es válida: " + ruta;
+			}
+			Path archivo;
+			try {
+				archivo = Path.of(rutaArchivo);
+			} catch (RuntimeException e) {
+				return "La ruta no es válida: " + rutaArchivo;
+			}
+			if (!Files.isRegularFile(archivo) || !Files.isReadable(archivo)) {
+				return "El recurso no existe o no se puede leer: " + rutaArchivo;
+			}
 		}
 
 		if (solicitud.getParametros() == null) {

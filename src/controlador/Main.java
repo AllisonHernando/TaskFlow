@@ -26,7 +26,8 @@ public class Main {
 		MonitorSistema monitor = new MonitorSistema(() -> {
 			Map<String, Integer> estados = new LinkedHashMap<>();
 			estados.put("PENDIENTE", gestorEstados.getPendientes());
-			estados.put("EN_PROCESO", gestorEstados.getEnProceso());
+			estados.put("EN_COLA", gestorEstados.getEnCola());
+			estados.put("EJECUTANDO", gestorEstados.getEjecutando());
 			estados.put("COMPLETADO", gestorEstados.getCompletados());
 			estados.put("FALLIDO", gestorEstados.getFallidos());
 			estados.put("CANCELADO", gestorEstados.getCancelados());
