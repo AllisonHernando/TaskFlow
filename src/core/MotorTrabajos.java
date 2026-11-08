@@ -12,14 +12,17 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import factory.ProcessorFactory;
 import modelo.Trabajo;
 
 public class MotorTrabajos {
     private final BlockingQueue<Trabajo> colaTrabajos;
     private final ExecutorService poolTrabajadores;
     private final GestorEstados gestorEstados;
+    private final ProcessorFactory factory = new ProcessorFactory();
 
-  
+    private final Trabajo FIN = new Trabajo("FIN");
+
     private final Semaphore permisos;
 
     private final AtomicInteger enCola = new AtomicInteger(0);
@@ -42,7 +45,8 @@ public class MotorTrabajos {
         this.despachador = new Thread(() -> despachar());
         this.despachador.start();
     }
-    
+
+
     public boolean agregarTrabajo(Trabajo trabajo) throws InterruptedException {
         synchronized (candado) {
             if (!activo) {
@@ -67,19 +71,18 @@ public class MotorTrabajos {
 
     private void despachar() {
         try {
-            while (activo || enCola.get() > 0) {
-                permisos.acquire();           
-                final Trabajo t = colaTrabajos.poll();
-                if (t == null) {            
+            while (true) {
+                permisos.acquire();                
+                final Trabajo t = colaTrabajos.take(); 
+                if (t == FIN) {
                     permisos.release();
-                    Thread.sleep(10);
-                    continue;
+                    break;                          
                 }
                 enCola.decrementAndGet();
                 Callable<Boolean> tarea = () -> {
                     trabajadoresActivos.incrementAndGet();
                     try {
-                        return new HiloTrabajador(t, gestorEstados).call();
+                        return new HiloTrabajador(t, gestorEstados, factory).call();
                     } finally {
                         trabajadoresActivos.decrementAndGet();
                         permisos.release();
@@ -95,8 +98,13 @@ public class MotorTrabajos {
 
     public boolean cerrar(long timeoutSegundos) throws InterruptedException {
         synchronized (candado) {
-            activo = false;   
+            if (!activo) {
+                return true; 
+            }
+            activo = false;
         }
+
+        colaTrabajos.put(FIN);   
 
         despachador.join(timeoutSegundos * 1000);
         boolean limpio = !despachador.isAlive();
@@ -111,8 +119,10 @@ public class MotorTrabajos {
         if (!limpio) {
             Trabajo t = colaTrabajos.poll();
             while (t != null) {
-                enCola.decrementAndGet();
-                gestorEstados.cancelarTrabajo(t);
+                if (t != FIN) {
+                    enCola.decrementAndGet();
+                    gestorEstados.cancelarTrabajo(t);
+                }
                 t = colaTrabajos.poll();
             }
             poolTrabajadores.shutdownNow();
