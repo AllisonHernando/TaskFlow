@@ -59,9 +59,8 @@ public class MenuConsola {
 			}
 			break;
 		case "6":
-			System.out.println("Cerrando TaskFlow...");
-			sistema.cerrar();
-			return false;
+		    System.out.println("Cerrando TaskFlow...");
+		    return false;
 		default:
 			System.out.println("Opción no válida");
 		}
