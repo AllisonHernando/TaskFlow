@@ -1,6 +1,6 @@
 # TaskFlow
 
-Este proyecto es una aplicación de consola en Java desarrollada como trabajo final de la primera evaluación de la asignatura de Programación de Servicios y Procesos (DAM2, curso 2026-2027). Su objetivo es aplicar la programación concurrente con hilos, la sincronización entre ellos y la ejecución de procesos externos, trabajando en equipo con Git y GitHub.
+Este proyecto es una aplicación de consola en Java 21 desarrollada como trabajo final de la primera evaluación de la asignatura de Programación de Servicios y Procesos (DAM2, curso 2026-2027). Su objetivo es aplicar la programación concurrente con hilos, la sincronización entre ellos y la ejecución de procesos externos, trabajando en equipo con Git y GitHub.
 
 ## Integrantes del grupo
 
