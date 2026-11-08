@@ -34,7 +34,7 @@ public class SistemaFalso implements AccionesSistema, Runnable {
 						System.out.println("[trabajador] " + id + " no se ejecuta, está " + trabajos.get(id));
 						continue;
 					}
-					trabajos.put(id, EstadoTrabajo.EN_COLA);
+					trabajos.put(id, EstadoTrabajo.EJECUTANDO);
 				}
 				System.out.println("[trabajador] procesando " + id + "...");
 
@@ -77,23 +77,25 @@ public class SistemaFalso implements AccionesSistema, Runnable {
 		}
 		return id + ": " + estado;
 	}
+
 	// cuenta cuantos trabajos hay en cada estado
 	@Override
 	public synchronized String verEstadisticas() {
-		int pendientes = 0, enProceso = 0, completados = 0, cancelados = 0;
+		int pendientes = 0, ejecutando = 0, completados = 0, cancelados = 0;
 		for (EstadoTrabajo estado : trabajos.values()) {
 			if (estado == EstadoTrabajo.PENDIENTE)
 				pendientes++;
-			if (estado == EstadoTrabajo.EN_COLA)
-				enProceso++;
+			if (estado == EstadoTrabajo.EJECUTANDO)
+				ejecutando++;
 			if (estado == EstadoTrabajo.COMPLETADO)
 				completados++;
 			if (estado == EstadoTrabajo.CANCELADO)
 				cancelados++;
 		}
-		return "Pendientes: " + pendientes + " | En proceso: " + enProceso + " | Completados: " + completados
+		return "Pendientes: " + pendientes + " | Ejecutando: " + ejecutando + " | Completados: " + completados
 				+ " | Cancelados: " + cancelados;
 	}
+
 	// solo se cancela si todavia no ha empezado
 	@Override
 	public synchronized boolean cancelar(String id) {
