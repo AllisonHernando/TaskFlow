@@ -1,0 +1,5 @@
+id;operacion;ruta;parametros
+P5-01;ESTADISTICAS_CSV;data/ventas_mal.csv;
+P5-02;ESTADISTICAS_CSV;data/binario.csv;
+P5-03;ESTADISTICAS_CSV;data/ventas.csv;
+P5-04;ESTADISTICAS_CSV;data/no_existe.csv;

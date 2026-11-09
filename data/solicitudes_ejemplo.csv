@@ -1,0 +1,6 @@
+id;operacion;ruta;parametros
+E001;ANALIZAR_TEXTO;data/allison_texto.txt;
+E002;BUSCAR_TEXTO;data/allison_texto.txt;TaskFlow
+E003;ESTADISTICAS_CSV;data/allison_numeros.csv;
+E004;BUSCAR_TEXTO;data/allison_texto.txt;hilo
+E005;ANALIZAR_TEXTO;data/allison_texto.txt;
